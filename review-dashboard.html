@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ICT Assessment Review Dashboard</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    .bg-grid-pattern { background-image: radial-gradient(circle at 2px 2px, rgba(0,101,212,0.05) 1px, transparent 0); background-size: 40px 40px; }
+    .card { transition: all 0.15s ease; }
+    .table-container { max-height: 60vh; overflow-y: auto; }
+    .btn-primary { transition: all 0.2s ease; }
+    .btn-primary:hover { transform: translateY(-2px); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-20">
+        <div class="flex items-center gap-2">
+          <span style="width: 150px; height: auto;">
+            <img src="https://i0.wp.com/thenigeriaeducationnews.com/wp-content/uploads/2025/03/TETFUND.jpg?fit=1053%2C343&ssl=1" alt="TETFUND logo">
+          </span>
+        </div>
+        <div class="flex items-center gap-4">
+          <button id="exportBtn" class="px-4 py-2 bg-primary text-white rounded-lg btn-primary">Export to CSV</button>
+          <button id="logoutBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg">Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Header offset -->
+  <div class="pt-28"></div>
+
+  <!-- Main content -->
+  <section class="relative py-12 overflow-hidden">
+    <div class="absolute inset-0 bg-grid-pattern opacity-40"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      
+      <!-- Page header -->
+      <div class="mb-8 text-center">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-primary text-xs font-bold uppercase tracking-widest mb-4">
+          <span class="flex h-2 w-2 rounded-full bg-primary"></span> review dashboard
+        </div>
+        <h2 class="text-3xl md:text-4xl font-extrabold text-slate-900">ICT Infrastructure Submissions</h2>
+        <p class="text-slate-600 mt-3 max-w-2xl mx-auto">Review submitted forms (media not accessible)</p>
+      </div>
+
+      <!-- Stats cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="card bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-slate-600">Total Submissions</p>
+              <p id="totalSubmissions" class="text-3xl font-bold text-slate-900">0</p>
+            </div>
+            <div class="p-3 bg-blue-100 rounded-lg">
+              <span class="material-icons text-blue-600 text-2xl">list_alt</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-slate-600">With Specifications</p>
+              <p id="withSpecs" class="text-3xl font-bold text-slate-900">0</p>
+            </div>
+            <div class="p-3 bg-green-100 rounded-lg">
+              <span class="material-icons text-green-600 text-2xl">check_circle</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-slate-600">Last Submission</p>
+              <p id="lastSubmission" class="text-lg font-bold text-slate-900">-</p>
+            </div>
+            <div class="p-3 bg-purple-100 rounded-lg">
+              <span class="material-icons text-purple-600 text-2xl">schedule</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data table -->
+      <div class="card bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <div class="table-container">
+            <table class="min-w-full divide-y divide-slate-200">
+              <thead class="bg-slate-50 sticky top-0">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">School Name</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Contact Person</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Spec Meet</th>
+                </tr>
+              </thead>
+              <tbody id="submissionsTable" class="bg-white divide-y divide-slate-200">
+                <!-- Table rows will be populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Check if user is authenticated
+    if (!localStorage.getItem('authToken') || localStorage.getItem('userRole') !== 'review') {
+      window.location.href = '/login.html';
+    }
+
+    // Fetch submissions from API
+    async function fetchSubmissions() {
+      try {
+        const response = await fetch('/api/submissions-review', {
+          headers: {
+            'Authorization': `Basic ${localStorage.getItem('authToken')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch submissions');
+        }
+        
+        const submissions = await response.json();
+        renderSubmissions(submissions);
+        updateStats(submissions);
+      } catch (error) {
+        console.error('Error fetching submissions:', error);
+        document.getElementById('submissionsTable').innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading submissions</td></tr>';
+      }
+    }
+
+    // Render submissions in table
+    function renderSubmissions(submissions) {
+      const tableBody = document.getElementById('submissionsTable');
+      
+      if (submissions.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-slate-500">No submissions found</td></tr>';
+        return;
+      }
+      
+      tableBody.innerHTML = submissions.map(submission => {
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${submission.school_name}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${submission.contact_person}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${submission.email}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${submission.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                ${submission.status}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${new Date(submission.created_at).toLocaleDateString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+              ${submission.spec_meet}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Update statistics
+    function updateStats(submissions) {
+      document.getElementById('totalSubmissions').textContent = submissions.length;
+      
+      const withSpecsCount = submissions.filter(s => s.spec_meet === 'Yes').length;
+      document.getElementById('withSpecs').textContent = withSpecsCount;
+      
+      if (submissions.length > 0) {
+        const latest = new Date(submissions[0].created_at);
+        document.getElementById('lastSubmission').textContent = latest.toLocaleDateString();
+      }
+    }
+
+    // Export to CSV
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      window.location.href = '/api/export-csv-review';
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userRole');
+      window.location.href = '/login.html';
+    });
+
+    // Initial load
+    fetchSubmissions();
+  </script>
+</body>
+</html>

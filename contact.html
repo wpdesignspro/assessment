@@ -51,8 +51,8 @@
         <p class="text-slate-600 mt-3 max-w-2xl mx-auto">All fields marked with <span class="text-red-500 font-bold">*</span> are required. Please provide accurate information.</p>
       </div>
 
-      <!-- THE FORM (no actual submit handler – static demo, but fully styled) -->
-      <form class="bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8 space-y-8" onsubmit="event.preventDefault(); alert('Form demo — actual submission would happen here.');">
+      <!-- THE FORM (connected to backend) -->
+      <form id="contactForm" class="bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8 space-y-8">
         
         <!-- 1. FULL NAME OF THE SCHOOL -->
         <div class="form-card">
@@ -272,7 +272,7 @@
           <div class="file-upload-btn rounded-xl p-4 text-center cursor-pointer border-2 border-dashed border-slate-300 hover:border-primary transition">
             <span class="material-icons text-slate-400">videocam</span>
             <p class="text-sm text-slate-600">Click to upload video (max 10 GB, MP4/MOV etc.)</p>
-            <input type="file" accept="video/*" class="hidden" id="videoUpload" multiple>
+            <input type="file" name="videos" accept="video/*" class="hidden" id="videoUpload" multiple>
           </div>
           <label for="videoUpload" class="cursor-pointer inline-block mt-2 text-sm text-primary">or choose file</label>
           <p class="text-xs text-slate-400 mt-1">Up to 10 files, 10 GB per file.</p>
@@ -284,7 +284,7 @@
           <div class="file-upload-btn rounded-xl p-4 text-center cursor-pointer border-2 border-dashed border-slate-300 hover:border-primary">
             <span class="material-icons text-slate-400">photo_library</span>
             <p class="text-sm text-slate-600">Click to add images (max 100 MB per file)</p>
-            <input type="file" accept="image/*" class="hidden" id="imageUpload" multiple>
+            <input type="file" name="pictures" accept="image/*" class="hidden" id="imageUpload" multiple>
           </div>
           <label for="imageUpload" class="cursor-pointer inline-block mt-2 text-sm text-primary">choose pictures</label>
           <p class="text-xs text-slate-400 mt-1">Up to 10 images, JPG/PNG, max 100 MB each.</p>
@@ -299,6 +299,32 @@
 
         <p class="text-center text-xs text-slate-400 mt-4">Your data will be handled according to our privacy policy.</p>
       </form>
+
+      <script>
+        document.getElementById('contactForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const formData = new FormData(e.target);
+          
+          try {
+            const response = await fetch('/api/submit-form', {
+              method: 'POST',
+              body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+              alert('Form submitted successfully!');
+              e.target.reset();
+            } else {
+              alert('Error submitting form: ' + result.error);
+            }
+          } catch (error) {
+            alert('Error submitting form: ' + error.message);
+          }
+        });
+      </script>
     </div>
   </section>
 
