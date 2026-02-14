@@ -51,8 +51,8 @@
         <p class="text-slate-600 mt-3 max-w-2xl mx-auto">All fields marked with <span class="text-red-500 font-bold">*</span> are required. Please provide accurate information.</p>
       </div>
 
-      <!-- THE FORM (no actual submit handler – static demo, but fully styled) -->
-      <form class="bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8 space-y-8" onsubmit="event.preventDefault(); alert('Form demo — actual submission would happen here.');">
+      <!-- THE FORM (connected to PHP backend) -->
+      <form class="bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8 space-y-8" action="/php/process_form.php" method="POST" enctype="multipart/form-data" id="assessmentForm">
         
         <!-- 1. FULL NAME OF THE SCHOOL -->
         <div class="form-card">
@@ -308,5 +308,118 @@
       © 2026 ICT Infrastructure Assessment Portal — official assessment form
     </div>
   </footer>
+
+  <script>
+    document.getElementById('assessmentForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      // Show loading state
+      const submitButton = this.querySelector('button[type="submit"]');
+      const originalText = submitButton.innerHTML;
+      submitButton.innerHTML = '<span class="material-icons animate-spin">refresh</span> Submitting...';
+      submitButton.disabled = true;
+      
+      try {
+        // Collect form data
+        const formData = new FormData();
+        
+        // Text inputs
+        formData.append('school_name', document.querySelector('input[placeholder="e.g., University of Lagos"]').value);
+        formData.append('contact_person', document.querySelector('input[placeholder="Surname, First name"]').value);
+        formData.append('contact_phone', document.querySelector('input[placeholder="Phone (e.g., +234 800 000 0000)"]').value);
+        formData.append('contact_email', document.querySelector('input[placeholder="Email address"]').value);
+        
+        // Radio buttons for dedicated building
+        const dedicatedBuildingRadio = document.querySelector('input[name="dedicated_building"]:checked');
+        if (dedicatedBuildingRadio) {
+          formData.append('dedicated_building', dedicatedBuildingRadio.value);
+        }
+        
+        // Dropdowns
+        formData.append('facility_type', document.querySelector('select:nth-of-type(1)').value);
+        formData.append('status', document.querySelector('select:nth-of-type(2)').value);
+        formData.append('health_state', document.querySelector('select:nth-of-type(3)').value);
+        formData.append('floor_area', document.querySelector('input[placeholder="e.g., 1000"]').value);
+        
+        // Radio buttons for meets minimum area
+        const meetsMinAreaRadio = document.querySelectorAll('input[name="meets2000"]')[0].checked ? 
+                                  document.querySelectorAll('input[name="meets2000"]')[0] : 
+                                  document.querySelectorAll('input[name="meets2000"]')[1];
+        if (meetsMinAreaRadio) {
+          formData.append('meets_min_area', meetsMinAreaRadio.value);
+        }
+        
+        formData.append('total_size', document.querySelector('input[placeholder="size in square metres"]').value);
+        formData.append('num_floors', document.querySelector('select:nth-of-type(4)').value);
+        formData.append('location', document.querySelector('select:nth-of-type(5)').value);
+        formData.append('computer_system', document.querySelector('select:nth-of-type(6)').value);
+        formData.append('num_computers', document.querySelector('input[placeholder="e.g., 120"]').value);
+        
+        // Radio buttons for spec meet
+        const specMeetRadio = document.querySelector('input[name="spec_meet"]:checked');
+        if (specMeetRadio) {
+          formData.append('spec_meet', specMeetRadio.value);
+        }
+        
+        // Radio buttons for networking
+        const networkingRadio = document.querySelector('input[name="networking"]:checked');
+        if (networkingRadio) {
+          formData.append('has_networking', networkingRadio.value);
+        }
+        
+        formData.append('internet_speed', document.querySelector('select:nth-of-type(7)').value);
+        formData.append('num_exits', document.querySelector('select:nth-of-type(8)').value);
+        
+        // Checkbox values for conveniences
+        const convenienceCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+        convenienceCheckboxes.forEach(checkbox => {
+          if (checkbox.checked) {
+            formData.append('conveniences[]', checkbox.value);
+          }
+        });
+        
+        // Radio buttons for convenience attached
+        const convenienceAttachedRadio = document.querySelector('input[name="attach"]:checked');
+        if (convenienceAttachedRadio) {
+          formData.append('convenience_attached', convenienceAttachedRadio.value);
+        }
+        
+        formData.append('is_furnished', document.querySelector('select:nth-of-type(9)').value);
+        formData.append('furniture_list', document.querySelector('textarea').value);
+        
+        // File uploads
+        const videoFile = document.getElementById('videoUpload').files[0];
+        if (videoFile) {
+          formData.append('video', videoFile);
+        }
+        
+        const imageFiles = document.getElementById('imageUpload').files;
+        for (let i = 0; i < imageFiles.length; i++) {
+          formData.append('images[]', imageFiles[i]);
+        }
+        
+        // Submit form data
+        const response = await fetch('/php/process_form.php', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+          alert('Form submitted successfully!');
+          window.location.href = '/'; // Redirect to home page
+        } else {
+          alert('Error: ' + result.message);
+        }
+      } catch (error) {
+        alert('An error occurred while submitting the form: ' + error.message);
+      } finally {
+        // Restore button state
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+      }
+    });
+  </script>
 </body>
 </html>
