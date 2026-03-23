@@ -63,6 +63,51 @@ $statsStmt = $db->query("SELECT
     COUNT(CASE WHEN MONTH(submission_date) = MONTH(CURDATE()) THEN 1 END) as month_submissions
 FROM submissions");
 $stats = $statsStmt->fetch();
+
+// ── KITA Submissions ──────────────────────────────────────────────────────────
+$kitaPage = isset($_GET['kita_page']) ? max(1, intval($_GET['kita_page'])) : 1;
+$kitaOffset = ($kitaPage - 1) * $perPage;
+
+$kitaSearch = isset($_GET['kita_search']) ? sanitizeInput($_GET['kita_search']) : '';
+$kitaSearchCondition = '';
+$kitaSearchParams = [];
+if (!empty($kitaSearch)) {
+    $kitaSearchCondition = " WHERE school_name LIKE ? OR staff_name LIKE ? OR location_state LIKE ?";
+    $kitaSearchTerm = "%$kitaSearch%";
+    $kitaSearchParams = [$kitaSearchTerm, $kitaSearchTerm, $kitaSearchTerm];
+}
+
+// Check if kita_submissions table exists before querying
+$kitaTableExists = false;
+try {
+    $checkStmt = $db->query("SHOW TABLES LIKE 'kita_submissions'");
+    $kitaTableExists = $checkStmt->rowCount() > 0;
+} catch (Exception $e) {}
+
+$kitaTotalRecords = 0;
+$kitaTotalPages   = 0;
+$kitaSubmissions  = [];
+$kitaStats        = ['total' => 0, 'today' => 0, 'week' => 0, 'month' => 0];
+
+if ($kitaTableExists) {
+    $kitaCountStmt = $db->prepare("SELECT COUNT(*) as total FROM kita_submissions" . $kitaSearchCondition);
+    $kitaCountStmt->execute($kitaSearchParams ?: []);
+    $kitaTotalRecords = $kitaCountStmt->fetch()['total'];
+    $kitaTotalPages   = ceil($kitaTotalRecords / $perPage);
+
+    $kitaStmt = $db->prepare("SELECT * FROM kita_submissions" . $kitaSearchCondition . " ORDER BY submission_date DESC LIMIT ? OFFSET ?");
+    $kitaStmt->execute(array_merge($kitaSearchParams, [$perPage, $kitaOffset]));
+    $kitaSubmissions = $kitaStmt->fetchAll();
+
+    $kitaStatsStmt = $db->query("SELECT
+        COUNT(*) as total,
+        COUNT(CASE WHEN DATE(submission_date) = CURDATE() THEN 1 END) as today,
+        COUNT(CASE WHEN WEEK(submission_date) = WEEK(CURDATE()) THEN 1 END) as week,
+        COUNT(CASE WHEN MONTH(submission_date) = MONTH(CURDATE()) THEN 1 END) as month
+    FROM kita_submissions");
+    $kitaStats = $kitaStatsStmt->fetch();
+}
+// ─────────────────────────────────────────────────────────────────────────────
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -150,6 +195,19 @@ $stats = $statsStmt->fetch();
                 </div>
             </div>
         </div>
+
+        <!-- Tab Navigation -->
+        <div class="flex gap-2 mb-6 border-b border-slate-200">
+            <button id="tabIct" onclick="switchTab('ict')" class="tab-btn px-5 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition focus:outline-none">
+                <span class="material-icons align-middle text-base mr-1">computer</span>ICT Submissions
+            </button>
+            <button id="tabKita" onclick="switchTab('kita')" class="tab-btn px-5 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition focus:outline-none">
+                <span class="material-icons align-middle text-base mr-1">hub</span>KITA Hub Submissions
+            </button>
+        </div>
+
+        <!-- ═══════════════════════ ICT TAB ═══════════════════════ -->
+        <div id="paneIct">
 
         <!-- Action Bar -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
@@ -282,6 +340,218 @@ $stats = $statsStmt->fetch();
                 </div>
             <?php endif; ?>
         </div>
+
+        </div><!-- end #paneIct -->
+
+        <!-- ═══════════════════════ KITA TAB ═══════════════════════ -->
+        <div id="paneKita" style="display:none;">
+
+            <!-- KITA Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div class="stat-card bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-600">Total KITA Submissions</p>
+                            <p class="text-3xl font-bold text-slate-900 mt-2"><?php echo number_format($kitaStats['total']); ?></p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <span class="material-icons text-blue-600">hub</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-600">Today</p>
+                            <p class="text-3xl font-bold text-slate-900 mt-2"><?php echo number_format($kitaStats['today']); ?></p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <span class="material-icons text-green-600">today</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-600">This Week</p>
+                            <p class="text-3xl font-bold text-slate-900 mt-2"><?php echo number_format($kitaStats['week']); ?></p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <span class="material-icons text-purple-600">date_range</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-600">This Month</p>
+                            <p class="text-3xl font-bold text-slate-900 mt-2"><?php echo number_format($kitaStats['month']); ?></p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <span class="material-icons text-orange-600">calendar_month</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KITA Search -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                <form method="GET" class="flex-1 max-w-md" onsubmit="return submitKitaSearch(event)">
+                    <div class="relative">
+                        <span class="material-icons absolute left-3 top-3 text-slate-400">search</span>
+                        <input
+                            type="text"
+                            id="kitaSearchInput"
+                            value="<?php echo htmlspecialchars($kitaSearch); ?>"
+                            placeholder="Search by school, staff, or state..."
+                            class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                    </div>
+                </form>
+            </div>
+
+            <!-- KITA Submissions Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <?php if (!$kitaTableExists): ?>
+                    <div class="px-6 py-12 text-center text-slate-500">
+                        <span class="material-icons text-4xl mb-2">info</span>
+                        <p>No KITA submissions yet. The table will be created when the first submission is received.</p>
+                    </div>
+                <?php else: ?>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">School Name</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Staff Name</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">State</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Position</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Hub</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <?php if (empty($kitaSubmissions)): ?>
+                                <tr>
+                                    <td colspan="8" class="px-6 py-12 text-center text-slate-500">
+                                        <span class="material-icons text-4xl mb-2">inbox</span>
+                                        <p>No KITA submissions found</p>
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($kitaSubmissions as $ks): ?>
+                                    <tr class="hover:bg-slate-50 transition">
+                                        <td class="px-6 py-4 text-sm font-medium text-slate-900">#<?php echo $ks['id']; ?></td>
+                                        <td class="px-6 py-4 text-sm text-slate-900 font-medium"><?php echo htmlspecialchars($ks['school_name']); ?></td>
+                                        <td class="px-6 py-4 text-sm text-slate-700"><?php echo htmlspecialchars($ks['staff_name']); ?></td>
+                                        <td class="px-6 py-4 text-sm text-slate-700"><?php echo htmlspecialchars($ks['location_state']); ?></td>
+                                        <td class="px-6 py-4 text-sm text-slate-700">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><?php echo htmlspecialchars($ks['kita_position']); ?></span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium <?php echo $ks['has_functional_hub'] === 'Yes' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'; ?>">
+                                                <?php echo htmlspecialchars($ks['has_functional_hub']); ?>
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-slate-700"><?php echo date('M d, Y', strtotime($ks['submission_date'])); ?></td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <a href="view_kita_submission.php?id=<?php echo $ks['id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition">
+                                                <span class="material-icons" style="font-size:14px;">visibility</span>
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- KITA Pagination -->
+                <?php if ($kitaTotalPages > 1): ?>
+                    <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+                        <div class="text-sm text-slate-600">
+                            Showing <?php echo $kitaOffset + 1; ?> to <?php echo min($kitaOffset + $perPage, $kitaTotalRecords); ?> of <?php echo $kitaTotalRecords; ?> results
+                        </div>
+                        <div class="flex gap-2">
+                            <?php if ($kitaPage > 1): ?>
+                                <a href="javascript:void(0)" onclick="goKitaPage(<?php echo $kitaPage - 1; ?>)" class="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 transition">Previous</a>
+                            <?php endif; ?>
+                            <?php for ($i = max(1, $kitaPage - 2); $i <= min($kitaTotalPages, $kitaPage + 2); $i++): ?>
+                                <a href="javascript:void(0)" onclick="goKitaPage(<?php echo $i; ?>)" class="px-3 py-2 border <?php echo $i === $kitaPage ? 'bg-blue-600 text-white border-blue-600' : 'border-slate-300 hover:bg-slate-50'; ?> rounded-lg text-sm font-medium transition">
+                                    <?php echo $i; ?>
+                                </a>
+                            <?php endfor; ?>
+                            <?php if ($kitaPage < $kitaTotalPages): ?>
+                                <a href="javascript:void(0)" onclick="goKitaPage(<?php echo $kitaPage + 1; ?>)" class="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 transition">Next</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+                <?php endif; ?>
+            </div>
+
+        </div><!-- end #paneKita -->
+
     </div>
+
+    <script>
+        // Determine initial active tab from URL or server-side (e.g., ?tab=kita)
+        const urlParams = new URLSearchParams(window.location.search);
+        const initTab = urlParams.get('tab') === 'kita' ? 'kita' : 'ict';
+
+        function switchTab(tab) {
+            const ictBtn   = document.getElementById('tabIct');
+            const kitaBtn  = document.getElementById('tabKita');
+            const ictPane  = document.getElementById('paneIct');
+            const kitaPane = document.getElementById('paneKita');
+
+            if (tab === 'ict') {
+                ictPane.style.display  = '';
+                kitaPane.style.display = 'none';
+                ictBtn.classList.add('border-blue-600', 'text-blue-700');
+                ictBtn.classList.remove('border-transparent', 'text-slate-500');
+                kitaBtn.classList.add('border-transparent', 'text-slate-500');
+                kitaBtn.classList.remove('border-blue-600', 'text-blue-700');
+            } else {
+                ictPane.style.display  = 'none';
+                kitaPane.style.display = '';
+                kitaBtn.classList.add('border-blue-600', 'text-blue-700');
+                kitaBtn.classList.remove('border-transparent', 'text-slate-500');
+                ictBtn.classList.add('border-transparent', 'text-slate-500');
+                ictBtn.classList.remove('border-blue-600', 'text-blue-700');
+            }
+            // Update URL without reload
+            const url = new URL(window.location.href);
+            if (tab === 'kita') {
+                url.searchParams.set('tab', 'kita');
+            } else {
+                url.searchParams.delete('tab');
+            }
+            history.replaceState(null, '', url.toString());
+        }
+
+        function submitKitaSearch(e) {
+            e.preventDefault();
+            const val = document.getElementById('kitaSearchInput').value;
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'kita');
+            url.searchParams.set('kita_search', val);
+            url.searchParams.delete('kita_page');
+            window.location.href = url.toString();
+        }
+
+        function goKitaPage(page) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'kita');
+            url.searchParams.set('kita_page', page);
+            window.location.href = url.toString();
+        }
+
+        // Activate initial tab on load
+        switchTab(initTab);
+    </script>
 </body>
 </html>

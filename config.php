@@ -55,7 +55,7 @@ define('REVIEW_PASSWORD', getenv('REVIEW_PASSWORD'));
 // Upload settings
 define('UPLOAD_DIR', getenv('UPLOAD_DIR') ?: 'uploads/');
 define('MAX_IMAGE_SIZE', getenv('MAX_IMAGE_SIZE') ?: 104857600);
-define('MAX_VIDEO_SIZE', getenv('MAX_VIDEO_SIZE') ?: 10737418240);
+define('MAX_VIDEO_SIZE', getenv('MAX_VIDEO_SIZE') ?: 1073741824);
 define('ALLOWED_IMAGE_TYPES', getenv('ALLOWED_IMAGE_TYPES') ?: 'image/jpeg,image/png,image/jpg');
 define('ALLOWED_VIDEO_TYPES', getenv('ALLOWED_VIDEO_TYPES') ?: 'video/mp4,video/mov,video/avi');
 

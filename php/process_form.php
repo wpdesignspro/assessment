@@ -2,6 +2,7 @@
 /**
  * Form Processing Script - ICT Assessment Portal
  * Handles form submissions with proper error handling
+ * Updated to support conditional computer fields
  */
 
 // Prevent any output before JSON
@@ -47,13 +48,13 @@ try {
     // Get database connection
     $db = Database::getInstance()->getConnection();
     
-    // Validate required fields
+    // Validate required fields (always required)
     $requiredFields = [
         'school_name', 'contact_person', 'contact_phone', 'contact_email',
         'dedicated_building', 'facility_type', 'status', 'health_state',
         'floor_area', 'meets_min_area', 'num_floors', 'location',
-        'computer_system', 'num_computers', 'spec_meet', 'has_networking',
-        'internet_speed', 'num_exits', 'is_furnished'
+        'has_computers', // NEW mandatory field
+        'num_exits', 'is_furnished'
     ];
     
     foreach ($requiredFields as $field) {
@@ -62,13 +63,40 @@ try {
         }
     }
     
+    // Check if computer details should be present
+    $hasComputers = $_POST['has_computers'] === 'Yes';
+    
+    // Fields that are required only if has_computers is Yes
+    if ($hasComputers) {
+        $computerRequiredFields = [
+            'computer_system', 'num_computers', 'spec_meet', 
+            'has_networking', 'internet_speed'
+        ];
+        
+        foreach ($computerRequiredFields as $field) {
+            if (!isset($_POST[$field]) || trim($_POST[$field]) === '') {
+                sendJsonResponse('error', "Missing required computer field: $field");
+            }
+        }
+    }
+    
     // Begin transaction
     $db->beginTransaction();
     
-    // Prepare data
+    // Prepare base data
     $data = [];
     foreach ($requiredFields as $field) {
         $data[$field] = sanitizeInput($_POST[$field]);
+    }
+    
+    // Add computer fields (set to null if no computers)
+    $computerFields = ['computer_system', 'num_computers', 'spec_meet', 'has_networking', 'internet_speed'];
+    foreach ($computerFields as $field) {
+        if ($hasComputers && isset($_POST[$field])) {
+            $data[$field] = sanitizeInput($_POST[$field]);
+        } else {
+            $data[$field] = null; // Set to NULL for database
+        }
     }
     
     // Optional fields
@@ -104,16 +132,16 @@ try {
         school_name, contact_person, contact_phone, contact_email,
         dedicated_building, facility_type, status, health_state,
         floor_area, meets_min_area, total_size, num_floors, location,
-        computer_system, num_computers, spec_meet, has_networking,
-        internet_speed, num_exits, conveniences, convenience_attached,
-        is_furnished, furniture_list, ip_address
+        has_computers, computer_system, num_computers, spec_meet, 
+        has_networking, internet_speed, num_exits, conveniences, 
+        convenience_attached, is_furnished, furniture_list, ip_address
     ) VALUES (
         :school_name, :contact_person, :contact_phone, :contact_email,
         :dedicated_building, :facility_type, :status, :health_state,
         :floor_area, :meets_min_area, :total_size, :num_floors, :location,
-        :computer_system, :num_computers, :spec_meet, :has_networking,
-        :internet_speed, :num_exits, :conveniences, :convenience_attached,
-        :is_furnished, :furniture_list, :ip_address
+        :has_computers, :computer_system, :num_computers, :spec_meet, 
+        :has_networking, :internet_speed, :num_exits, :conveniences, 
+        :convenience_attached, :is_furnished, :furniture_list, :ip_address
     )";
     
     $stmt = $db->prepare($sql);
@@ -131,6 +159,7 @@ try {
         ':total_size' => $data['total_size'],
         ':num_floors' => $data['num_floors'],
         ':location' => $data['location'],
+        ':has_computers' => $data['has_computers'],
         ':computer_system' => $data['computer_system'],
         ':num_computers' => $data['num_computers'],
         ':spec_meet' => $data['spec_meet'],
@@ -264,6 +293,13 @@ function sendEmailNotification($data, $uploadedFiles) {
     $message .= "Thank you for submitting your ICT infrastructure assessment.\n\n";
     $message .= "Submission Details:\n";
     $message .= "School: " . $data['school_name'] . "\n";
+    $message .= "Computers available: " . $data['has_computers'] . "\n";
+    
+    if ($data['has_computers'] === 'Yes' && !empty($data['num_computers'])) {
+        $message .= "Number of computers: " . $data['num_computers'] . "\n";
+        $message .= "Computer type: " . $data['computer_system'] . "\n";
+    }
+    
     $message .= "Submission Date: " . date('Y-m-d H:i:s') . "\n\n";
     
     if (!empty($uploadedFiles)) {

@@ -1,0 +1,19 @@
+[20-Feb-2026 19:28:52 Africa/Lagos] PHP Warning:  Undefined array key "computer_system" in /home/lifepexv/infraassessment.ng/php/process_form.php on line 133
+[20-Feb-2026 19:28:52 Africa/Lagos] PHP Warning:  Undefined array key "num_computers" in /home/lifepexv/infraassessment.ng/php/process_form.php on line 134
+[20-Feb-2026 19:28:52 Africa/Lagos] PHP Warning:  Undefined array key "spec_meet" in /home/lifepexv/infraassessment.ng/php/process_form.php on line 135
+[20-Feb-2026 19:28:52 Africa/Lagos] PHP Warning:  Undefined array key "has_networking" in /home/lifepexv/infraassessment.ng/php/process_form.php on line 136
+[20-Feb-2026 19:28:52 Africa/Lagos] PHP Warning:  Undefined array key "internet_speed" in /home/lifepexv/infraassessment.ng/php/process_form.php on line 137
+[20-Feb-2026 19:28:52 Africa/Lagos] Database error: SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'computer_system' cannot be null
+[20-Feb-2026 19:29:09 Africa/Lagos] PHP Warning:  Undefined array key "computer_system" in /home/lifepexv/infraassessment.ng/php/process_form.php on line 133
+[20-Feb-2026 19:29:09 Africa/Lagos] PHP Warning:  Undefined array key "num_computers" in /home/lifepexv/infraassessment.ng/php/process_form.php on line 134
+[20-Feb-2026 19:29:09 Africa/Lagos] PHP Warning:  Undefined array key "spec_meet" in /home/lifepexv/infraassessment.ng/php/process_form.php on line 135
+[20-Feb-2026 19:29:09 Africa/Lagos] PHP Warning:  Undefined array key "has_networking" in /home/lifepexv/infraassessment.ng/php/process_form.php on line 136
+[20-Feb-2026 19:29:09 Africa/Lagos] PHP Warning:  Undefined array key "internet_speed" in /home/lifepexv/infraassessment.ng/php/process_form.php on line 137
+[20-Feb-2026 19:29:09 Africa/Lagos] Database error: SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'computer_system' cannot be null
+[20-Feb-2026 19:37:08 Africa/Lagos] Database error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'has_computers' in 'INSERT INTO'
+[20-Feb-2026 19:39:39 Africa/Lagos] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/lifepexv/infraassessment.ng/view_submission.php on line 189
+[20-Feb-2026 19:39:39 Africa/Lagos] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in /home/lifepexv/infraassessment.ng/view_submission.php on line 193
+[20-Feb-2026 19:39:39 Africa/Lagos] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/lifepexv/infraassessment.ng/view_submission.php on line 201
+[20-Feb-2026 19:39:39 Africa/Lagos] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/lifepexv/infraassessment.ng/view_submission.php on line 205
+[20-Feb-2026 19:39:39 Africa/Lagos] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/lifepexv/infraassessment.ng/view_submission.php on line 211
+[20-Feb-2026 19:42:46 Africa/Lagos] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/lifepexv/infraassessment.ng/view_submission.php on line 192

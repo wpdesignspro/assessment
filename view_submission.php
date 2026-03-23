@@ -182,34 +182,101 @@ if (isAdmin()) {
                 ICT Equipment
             </h2>
             <div class="space-y-4">
+                <!-- Has Computers field - Handle null for older submissions -->
                 <div class="detail-row py-3">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="text-sm font-semibold text-slate-600">Computer System Type</label>
-                            <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['computer_system']); ?></p>
+                            <label class="text-sm font-semibold text-slate-600">Has Computer Systems</label>
+                            <p class="text-base text-slate-900 mt-1">
+                                <?php 
+                                $hasComputers = isset($submission['has_computers']) ? $submission['has_computers'] : null;
+                                if ($hasComputers === null): 
+                                ?>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        Not specified (legacy submission)
+                                    </span>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $hasComputers === 'Yes' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; ?>">
+                                        <?php echo htmlspecialchars($hasComputers); ?>
+                                    </span>
+                                <?php endif; ?>
+                            </p>
                         </div>
-                        <div>
-                            <label class="text-sm font-semibold text-slate-600">Number of Computers</label>
-                            <p class="text-base text-slate-900 mt-1"><?php echo number_format($submission['num_computers']); ?></p>
-                        </div>
+                        <?php if ($hasComputers === 'Yes'): ?>
+                            <div>
+                                <label class="text-sm font-semibold text-slate-600">Computer System Type</label>
+                                <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['computer_system'] ?? 'N/A'); ?></p>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
-                <div class="detail-row py-3">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-sm font-semibold text-slate-600">Meets Specifications</label>
-                            <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['spec_meet']); ?></p>
-                        </div>
-                        <div>
-                            <label class="text-sm font-semibold text-slate-600">Has Networking</label>
-                            <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['has_networking']); ?></p>
+                
+                <?php if ($hasComputers === 'Yes'): ?>
+                    <!-- Show computer details for Yes responses -->
+                    <div class="detail-row py-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-semibold text-slate-600">Number of Computers</label>
+                                <p class="text-base text-slate-900 mt-1"><?php echo number_format($submission['num_computers'] ?? 0); ?></p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-semibold text-slate-600">Meets Specifications</label>
+                                <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['spec_meet'] ?? 'N/A'); ?></p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="detail-row py-3">
-                    <label class="text-sm font-semibold text-slate-600">Internet Speed</label>
-                    <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['internet_speed']); ?></p>
-                </div>
+                    <div class="detail-row py-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-semibold text-slate-600">Has Networking</label>
+                                <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['has_networking'] ?? 'N/A'); ?></p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-semibold text-slate-600">Internet Speed</label>
+                                <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['internet_speed'] ?? 'N/A'); ?></p>
+                            </div>
+                        </div>
+                    </div>
+                <?php elseif ($hasComputers === 'No'): ?>
+                    <!-- Show message for No responses -->
+                    <div class="detail-row py-3">
+                        <div class="bg-slate-50 p-4 rounded-lg">
+                            <p class="text-sm text-slate-600 italic">No computer systems reported for this centre.</p>
+                        </div>
+                    </div>
+                <?php elseif ($hasComputers === null): ?>
+                    <!-- Show legacy message for older submissions -->
+                    <div class="detail-row py-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-semibold text-slate-600">Computer System Type</label>
+                                <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['computer_system'] ?? 'Not specified'); ?></p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-semibold text-slate-600">Number of Computers</label>
+                                <p class="text-base text-slate-900 mt-1"><?php echo isset($submission['num_computers']) ? number_format($submission['num_computers']) : 'Not specified'; ?></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-row py-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-semibold text-slate-600">Meets Specifications</label>
+                                <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['spec_meet'] ?? 'Not specified'); ?></p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-semibold text-slate-600">Has Networking</label>
+                                <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['has_networking'] ?? 'Not specified'); ?></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-row py-3">
+                        <div>
+                            <label class="text-sm font-semibold text-slate-600">Internet Speed</label>
+                            <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['internet_speed'] ?? 'Not specified'); ?></p>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -222,19 +289,19 @@ if (isAdmin()) {
             <div class="space-y-4">
                 <div class="detail-row py-3">
                     <label class="text-sm font-semibold text-slate-600">Conveniences Available</label>
-                    <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['conveniences']) ?: 'None specified'; ?></p>
+                    <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['conveniences'] ?? 'None specified'); ?></p>
                 </div>
                 <div class="detail-row py-3">
                     <label class="text-sm font-semibold text-slate-600">Convenience Attachment</label>
-                    <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['convenience_attached']) ?: 'Not specified'; ?></p>
+                    <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['convenience_attached'] ?? 'Not specified'); ?></p>
                 </div>
                 <div class="detail-row py-3">
                     <label class="text-sm font-semibold text-slate-600">Is Furnished</label>
-                    <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['is_furnished']); ?></p>
+                    <p class="text-base text-slate-900 mt-1"><?php echo htmlspecialchars($submission['is_furnished'] ?? 'Not specified'); ?></p>
                 </div>
                 <div class="detail-row py-3">
                     <label class="text-sm font-semibold text-slate-600">Furniture List</label>
-                    <p class="text-base text-slate-900 mt-1 whitespace-pre-line"><?php echo htmlspecialchars($submission['furniture_list']) ?: 'None specified'; ?></p>
+                    <p class="text-base text-slate-900 mt-1 whitespace-pre-line"><?php echo htmlspecialchars($submission['furniture_list'] ?? 'None specified'); ?></p>
                 </div>
             </div>
         </div>
