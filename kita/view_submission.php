@@ -1,16 +1,16 @@
 <?php
-require_once 'config.php';
-requireLogin();
+session_start();
+require_once dirname(__DIR__) . '/config.php';
 
-// Admin only
-if (!isAdmin()) {
-    header('Location: admin_dashboard.php');
+// KITA admin only
+if (!isset($_SESSION['kita_logged_in']) || $_SESSION['kita_logged_in'] !== true) {
+    header('Location: login.php');
     exit();
 }
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($id <= 0) {
-    header('Location: admin_dashboard.php');
+    header('Location: admin.php');
     exit();
 }
 
@@ -21,11 +21,10 @@ $stmt->execute([$id]);
 $submission = $stmt->fetch();
 
 if (!$submission) {
-    header('Location: admin_dashboard.php');
+    header('Location: admin.php');
     exit();
 }
 
-// Get media files
 $mediaStmt = $db->prepare("SELECT * FROM kita_media_uploads WHERE submission_id = ? ORDER BY category, upload_date");
 $mediaStmt->execute([$id]);
 $mediaFiles = $mediaStmt->fetchAll();
@@ -43,7 +42,7 @@ $categoryLabels = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KITA Submission #<?php echo $id; ?> - Admin</title>
+    <title>KITA Submission #<?php echo $id; ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -54,11 +53,12 @@ $categoryLabels = [
     </style>
 </head>
 <body class="bg-slate-50">
+
     <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center gap-3">
-                    <a href="admin_dashboard.php?tab=kita" class="text-slate-600 hover:text-slate-900">
+                    <a href="admin.php" class="text-slate-600 hover:text-slate-900">
                         <span class="material-icons">arrow_back</span>
                     </a>
                     <div class="flex items-center gap-2">
@@ -68,7 +68,7 @@ $categoryLabels = [
                         <h1 class="text-lg font-bold text-slate-900">KITA Submission #<?php echo $id; ?></h1>
                     </div>
                 </div>
-                <a href="admin_dashboard.php?tab=kita" class="text-sm text-slate-600 hover:text-slate-900 font-medium">Back to Dashboard</a>
+                <a href="admin.php" class="text-sm text-slate-600 hover:text-slate-900 font-medium">Back to Dashboard</a>
             </div>
         </div>
     </header>
@@ -212,7 +212,7 @@ $categoryLabels = [
                             'Fair'      => 'bg-yellow-100 text-yellow-800',
                             'Poor'      => 'bg-red-100 text-red-800',
                         ];
-                        $condition = $submission['hub_condition'] ?? null;
+                        $condition  = $submission['hub_condition'] ?? null;
                         $colorClass = $conditionColors[$condition] ?? 'bg-slate-100 text-slate-800';
                         ?>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $colorClass; ?>">
@@ -234,7 +234,7 @@ $categoryLabels = [
 
                 <div class="detail-row py-3">
                     <label class="text-sm font-semibold text-slate-600">Top 3 Urgent Needs (Priority Order)</label>
-                    <ol class="mt-2 space-y-1 list-none">
+                    <ol class="mt-2 space-y-1">
                         <?php foreach ([1,2,3] as $n): ?>
                             <?php $need = $submission["urgent_need_$n"] ?? null; ?>
                             <?php if (!empty($need)): ?>
@@ -263,20 +263,21 @@ $categoryLabels = [
         </div>
 
         <!-- Media Files -->
-        <?php if (!empty($mediaFiles)): ?>
-            <?php
-            // Group by category
-            $grouped = [];
-            foreach ($mediaFiles as $file) {
-                $grouped[$file['category']][] = $file;
-            }
-            ?>
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                    <span class="material-icons text-blue-600">perm_media</span>
-                    Attached Media (<?php echo count($mediaFiles); ?> files)
-                </h2>
+        <?php
+        $grouped = [];
+        foreach ($mediaFiles as $file) {
+            $grouped[$file['category']][] = $file;
+        }
+        ?>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <span class="material-icons text-blue-600">perm_media</span>
+                Attached Media (<?php echo count($mediaFiles); ?> file<?php echo count($mediaFiles) !== 1 ? 's' : ''; ?>)
+            </h2>
 
+            <?php if (empty($mediaFiles)): ?>
+                <p class="text-slate-500 italic">No media files were uploaded with this submission.</p>
+            <?php else: ?>
                 <?php foreach ($categoryLabels as $catKey => $catLabel): ?>
                     <?php if (empty($grouped[$catKey])) continue; ?>
                     <div class="mb-8">
@@ -296,7 +297,7 @@ $categoryLabels = [
                                                 <p class="text-xs text-slate-500"><?php echo number_format($video['file_size'] / 1024 / 1024, 2); ?> MB</p>
                                             </div>
                                         </div>
-                                        <a href="../<?php echo htmlspecialchars($video['file_path']); ?>" download class="inline-flex items-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition">
+                                        <a href="../../<?php echo htmlspecialchars($video['file_path']); ?>" download class="inline-flex items-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition">
                                             <span class="material-icons" style="font-size:14px;">download</span>
                                             Download
                                         </a>
@@ -307,8 +308,8 @@ $categoryLabels = [
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <?php foreach ($grouped[$catKey] as $image): ?>
                                     <div class="border border-slate-200 rounded-lg p-2">
-                                        <img src="../<?php echo htmlspecialchars($image['file_path']); ?>" alt="Image" class="w-full h-32 object-cover rounded mb-2">
-                                        <a href="../<?php echo htmlspecialchars($image['file_path']); ?>" download class="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                                        <img src="../../<?php echo htmlspecialchars($image['file_path']); ?>" alt="Image" class="w-full h-32 object-cover rounded mb-2">
+                                        <a href="../../<?php echo htmlspecialchars($image['file_path']); ?>" download class="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1">
                                             <span class="material-icons" style="font-size:14px;">download</span>
                                             Download
                                         </a>
@@ -318,16 +319,8 @@ $categoryLabels = [
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
-            </div>
-        <?php else: ?>
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h2 class="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <span class="material-icons text-blue-600">perm_media</span>
-                    Media Files
-                </h2>
-                <p class="text-slate-500 italic">No media files were uploaded with this submission.</p>
-            </div>
-        <?php endif; ?>
+            <?php endif; ?>
+        </div>
 
     </div>
 </body>
